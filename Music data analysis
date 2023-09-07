@@ -1,0 +1,51 @@
+create database project3;
+use project3;
+show tables;
+select * from employee;
+# seniour employees based on their birth job title wise
+select d.* from
+(select employee_id, concat(first_name,' ', last_name)emp_name, title, birthdate, rank() over (partition by title order by birthdate)rnk
+from employee)d
+where rnk=1;
+#which countries have the most invoices
+select billing_country, sum(total) from invoice group by billing_country order by sum(total) desc
+limit 1;
+#which city has the best customer
+select billing_city, sum(total)amount from invoice group by billing_city order by sum(total) desc
+limit 1;
+#who is the best customer
+select concat(a.first_name,' ', a.last_name)cust_name, sum(b.total)amount_spent from customer a inner join invoice b 
+on a.customer_id=b.customer_id group by cust_name order by sum(b.total)desc;
+#artist who have writte the most rock music
+select * from album2;
+select  f.artist_id, count(f.artist_id)number_tracks from
+(select e.artist_id, e.title, d.name from
+(select a.name,b.album_id from genre a inner join track b on a.genre_id=b.genre_id 
+where a.name='Rock')d inner join album2 e on d.album_id=e.album_id)f
+group by artist_id;
+#tracks having a song length greater than average song lengt
+select name,  milliseconds from track where milliseconds > (select avg(milliseconds) from track) order by
+milliseconds desc;
+#find how much amount each customer spent on artists
+use project3;
+
+select a.customer_id,concat(a.first_name, a.last_name)cust_name, sum(b.unit_price*b.quantity)total_amnt,f.artist_id, f.name from customer a join
+invoice c on a.customer_id=c.customer_id join invoice_line b on c.invoice_id=b.invoice_id
+join track d on b.track_id=d.track_id join album2 e on d.album_id=e.album_id
+join artist f on e.artist_id=f.artist_id
+group by 1,2,4,5;
+
+# most popular genre in each country
+
+select f.name,g.billing_country, count(f.quantity) from
+(select d.name, e.invoice_id, e.quantity from
+(select a.name , b.track_id from genre a inner join track b on a.genre_id=b.genre_id)d
+inner join invoice_line e on d.track_id=e.track_id)f
+inner join invoice g on f.invoice_id=g.invoice_id group by 1,2 order by 3 desc; 
+
+#top customer of each country
+select j.* from
+(select a.first_name, b.billing_country, sum(b.total), dense_rank() over
+(partition by billing_country order by sum(b.total) desc)rnk from customer a inner join invoice b on 
+a.customer_id=b.customer_id group by 1,2 order by 3 desc)j
+where rnk=1;
